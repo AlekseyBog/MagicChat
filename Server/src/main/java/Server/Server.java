@@ -59,6 +59,20 @@ public class Server {
         }
     }
 
+    public void privateMsg (ClientHandler sender, String addressee, String msg){
+        String message = String.format("[ %s ] от [ %s ]: %s", addressee, sender.getNickname(), msg);
+        for (ClientHandler c : clients) {
+            if (c.getNickname().equals(addressee)){
+                c.sendMsg(message);
+                if (!sender.getNickname().equals(addressee)){
+                    sender.sendMsg(message);
+                }
+                return;
+            }
+        }
+        sender.sendMsg("No addressee with this nickname");
+    }
+
     public AuthService getAuthService() {
         return authService;
     }
