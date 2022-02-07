@@ -10,7 +10,7 @@
     <version>1.0-SNAPSHOT</version>
     <modules>
         <module>Client</module>
-        <module>Server</module>
+        <module>Server.Server</module>
     </modules>
 
     <properties>

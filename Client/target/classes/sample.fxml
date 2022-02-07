@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import java.net.*?>
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox alignment="center" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="Client.Controller">
+    <stylesheets>
+        <URL value="@/style.css" />
+    </stylesheets>
+    <MenuBar>
+        <Menu text="Menu">
+            <MenuItem onAction="#exitAction" text="Exit" />
+        </Menu>
+    </MenuBar>
+
+    <HBox fx:id="authPanel">
+        <TextField fx:id="loginField" promptText="login" HBox.hgrow="ALWAYS" />
+        <PasswordField fx:id="passwordField" promptText="password" HBox.hgrow="ALWAYS" />
+        <Button onAction="#clickBtnAuth" text="Auth" HBox.hgrow="ALWAYS"/>
+    </HBox>
+
+    <TextArea fx:id="textArea" VBox.vgrow="ALWAYS" editable="false" />
+    <HBox fx:id="msgPanel" visible="false" managed="false">
+        <TextField fx:id="textField" onAction="#sendText" promptText="Input text..." HBox.hgrow="ALWAYS" />
+        <Button onAction="#sendText" text="Send">
+            <HBox.margin>
+                <Insets bottom="5.0" left="5.0" right="5.0" />
+            </HBox.margin></Button>
+        <VBox.margin>
+            <Insets left="5.0" top="5.0" />
+        </VBox.margin>
+    </HBox>
+</VBox>
