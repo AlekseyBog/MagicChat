@@ -19,9 +19,16 @@
         <TextField fx:id="loginField" promptText="login" HBox.hgrow="ALWAYS" />
         <PasswordField fx:id="passwordField" promptText="password" HBox.hgrow="ALWAYS" />
         <Button onAction="#clickBtnAuth" text="Auth" HBox.hgrow="ALWAYS"/>
+        <Button onAction="#clickBtnReg" text="Reg" HBox.hgrow="ALWAYS"/>
     </HBox>
 
-    <TextArea fx:id="textArea" VBox.vgrow="ALWAYS" editable="false" />
+    <HBox VBox.vgrow="ALWAYS">
+        <TextArea fx:id="textArea" HBox.hgrow="ALWAYS" editable="false" />
+        <ListView fx:id="clientList" managed="false" visible="false" minWidth="150"
+        onMouseReleased="#clickClientList"/>
+    </HBox>
+
+
     <HBox fx:id="msgPanel" visible="false" managed="false">
         <TextField fx:id="textField" onAction="#sendText" promptText="Input text..." HBox.hgrow="ALWAYS" />
         <Button onAction="#sendText" text="Send">

@@ -13,6 +13,7 @@ public class ClientHandler {
     private  DataOutputStream out;
     private boolean authenticated;
     private String nickname;
+    private String login;
 
     public String getNickname() {
         return nickname;
@@ -43,15 +44,32 @@ public class ClientHandler {
                             }
                             String newNick = server.getAuthService()
                                     .getNicknameByLoginAndPassword(token[1], token[2]);
+                            login = token[1];
                             if (newNick != null){
-                                authenticated = true;
-                                nickname = newNick;
-                                sendMsg("/authok " + nickname);
-                                server.subscribe(this);
-                                System.out.println("Client: " + nickname + " authenticated");
-                                break;
+                                if (!server.isLoginAuthenticated(login)){
+                                    authenticated = true;
+                                    nickname = newNick;
+                                    sendMsg("/authok " + nickname);
+                                    server.subscribe(this);
+                                    System.out.println("Client: " + nickname + " authenticated");
+                                    break;
+                                }else {
+                                    sendMsg("С этим логином уже вошли");
+                                }
                             }else {
                                 sendMsg("Неверный логин/пароль");
+                            }
+                        }
+                        if (str.startsWith("/reg")) {
+                            String[] token = str.split(" ", 4);
+                            if (token.length < 4) {
+                                continue;
+                            }
+                            if (server.getAuthService()
+                                    .registration(token[1], token[2], token[3])){
+                                sendMsg("/reg_ok");
+                            }else {
+                                sendMsg("/reg_no");
                             }
                         }
                     }
@@ -100,5 +118,9 @@ public class ClientHandler {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    public String getLogin() {
+        return login;
     }
 }
