@@ -2,15 +2,20 @@ package Client;
 
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
-import javafx.event.EventHandler;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
+import javafx.scene.control.ListView;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.HBox;
+import javafx.stage.Modality;
 import javafx.stage.Stage;
-import javafx.stage.WindowEvent;
+import javafx.stage.StageStyle;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -32,17 +37,22 @@ public class Controller implements Initializable {
     public TextField loginField;
     @FXML
     public PasswordField passwordField;
+    @FXML
+    public ListView<String> clientList;
 
-    private  Socket socket;
-    private  DataInputStream in;
-    private  DataOutputStream out;
+    private Socket socket;
+    private DataInputStream in;
+    private DataOutputStream out;
 
-    private  final int PORT = 8189;
-    private  final String ADDRESS = "localhost";
+    private final int PORT = 8189;
+    private final String ADDRESS = "localhost";
 
     private boolean authenticated;
     private String nickname;
     private Stage stage;
+    private Stage regStage;
+
+    private RegController regController;
 
     public void setAuthenticated(boolean authenticated) {
         this.authenticated = authenticated;
@@ -50,26 +60,29 @@ public class Controller implements Initializable {
         authPanel.setManaged(!authenticated);
         msgPanel.setVisible(authenticated);
         msgPanel.setManaged(authenticated);
+        clientList.setVisible(authenticated);
+        clientList.setManaged(authenticated);
 
-        if (!authenticated){
+        if (!authenticated) {
             nickname = "";
         }
 
         setTitle(nickname);
+        textArea.clear();
     }
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
         Platform.runLater(() -> {
-            stage = (Stage)textField.getScene().getWindow();
+            stage = (Stage) textField.getScene().getWindow();
             stage.setOnCloseRequest(event -> {
-            if (socket != null && !socket.isClosed()){
-                try {
-                    out.writeUTF("/end");
-                } catch (IOException e) {
-                    e.printStackTrace();
+                if (socket != null && !socket.isClosed()) {
+                    try {
+                        out.writeUTF("/end");
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
                 }
-            }
             });
         });
         setAuthenticated(false);
@@ -88,16 +101,19 @@ public class Controller implements Initializable {
                     while (true) {
                         String str = in.readUTF();
 
-                        if (str.startsWith("/")){
+                        if (str.startsWith("/")) {
                             if (str.equals("/end")) {
                                 break;
                             }
-                            if (str.startsWith("/authok")){
+                            if (str.startsWith("/authok")) {
                                 nickname = str.split(" ")[1];
                                 setAuthenticated(true);
                                 break;
                             }
-                        }else {
+                            if (str.startsWith("/reg")) {
+                                regController.regStatus(str);
+                            }
+                        } else {
                             textArea.appendText(str + "\n");
                         }
                     }
@@ -105,16 +121,29 @@ public class Controller implements Initializable {
                     while (authenticated) {
                         String str = in.readUTF();
 
-                        if (str.equals("/end")) {
-                            setAuthenticated(false);
-                            break;
-                        }
+                        if (str.startsWith("/")) {
+                            if (str.equals("/end")) {
+                                setAuthenticated(false);
+                                break;
+                            }
+                            if (str.startsWith("/clientList")) {
+                                String[] token = str.split(" ");
+                                Platform.runLater(() -> {
+                                    clientList.getItems().clear();
+                                    for (int i = 1; i < token.length; i++) {
+                                        clientList.getItems().add(token[i]);
 
-                        textArea.appendText(str + "\n");
+                                    }
+                                });
+                            }
+
+                        } else {
+                            textArea.appendText(str + "\n");
+                        }
                     }
                 } catch (IOException e) {
                     e.printStackTrace();
-                }finally {
+                } finally {
                     try {
                         socket.close();
                     } catch (IOException e) {
@@ -129,8 +158,8 @@ public class Controller implements Initializable {
     }
 
     @FXML
-    public void sendText (ActionEvent actionEvent) {
-        if (textField.getText().length() > 0 ){
+    public void sendText(ActionEvent actionEvent) {
+        if (textField.getText().length() > 0) {
             try {
                 out.writeUTF(textField.getText());
                 textField.clear();
@@ -150,7 +179,7 @@ public class Controller implements Initializable {
     }
 
     public void clickBtnAuth(ActionEvent actionEvent) {
-        if (socket == null || socket.isClosed()){
+        if (socket == null || socket.isClosed()) {
             connect();
         }
         try {
@@ -163,15 +192,58 @@ public class Controller implements Initializable {
         }
     }
 
-    private void setTitle(String nickname){
+    private void setTitle(String nickname) {
         String title;
-        if (nickname.equals("")){
+        if (nickname.equals("")) {
             title = "Magic Chat";
-        }else {
+        } else {
             title = String.format("Magic Chat - %s", nickname);
         }
         Platform.runLater(() -> {
             stage.setTitle(title);
         });
+    }
+
+    public void clickClientList(MouseEvent mouseEvent) {
+        String addressee = clientList.getSelectionModel().getSelectedItem();
+        textField.setText("/w " + addressee + " ");
+    }
+
+    public void clickBtnReg(ActionEvent actionEvent) {
+        if (regStage == null) {
+            createRegWindow();
+        }
+        regStage.show();
+    }
+
+    private void createRegWindow() {
+        try {
+            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/reg.fxml"));
+            Parent root = fxmlLoader.load();
+            regStage = new Stage();
+            regStage.setTitle("Magic Chat registration");
+            regStage.setScene(new Scene(root, 600, 475));
+
+            regStage.initModality(Modality.APPLICATION_MODAL);
+            regStage.initStyle(StageStyle.UTILITY);
+
+            regController = fxmlLoader.getController();
+            regController.setController(this);
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void tryToReg(String login, String password, String nickname) {
+        if (socket == null || socket.isClosed()) {
+            connect();
+        }
+        String msg = String.format("/reg %s %s %s", login, password, nickname);
+        try {
+            out.writeUTF(msg);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }
