@@ -3,14 +3,14 @@ package Server;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketTimeoutException;
 
 public class ClientHandler {
-    private  Server server;
-    private  Socket socket;
-    private  DataInputStream in;
-    private  DataOutputStream out;
+    private Server server;
+    private Socket socket;
+    private DataInputStream in;
+    private DataOutputStream out;
     private boolean authenticated;
     private String nickname;
     private String login;
@@ -29,6 +29,7 @@ public class ClientHandler {
 
             new Thread(() -> {
                 try {
+                    socket.setSoTimeout(120000);
                     //цикл аутентификации
                     while (true) {
                         String str = in.readUTF();
@@ -37,26 +38,27 @@ public class ClientHandler {
                             sendMsg("/end");
                             break;
                         }
-                        if (str.startsWith("/auth")){
+                        if (str.startsWith("/auth")) {
                             String[] token = str.split(" ", 3);
-                            if (token.length < 3){
+                            if (token.length < 3) {
                                 continue;
                             }
                             String newNick = server.getAuthService()
                                     .getNicknameByLoginAndPassword(token[1], token[2]);
                             login = token[1];
-                            if (newNick != null){
-                                if (!server.isLoginAuthenticated(login)){
+                            if (newNick != null) {
+                                if (!server.isLoginAuthenticated(login)) {
                                     authenticated = true;
+                                    socket.setSoTimeout(0);
                                     nickname = newNick;
                                     sendMsg("/authok " + nickname);
                                     server.subscribe(this);
                                     System.out.println("Client: " + nickname + " authenticated");
                                     break;
-                                }else {
+                                } else {
                                     sendMsg("С этим логином уже вошли");
                                 }
-                            }else {
+                            } else {
                                 sendMsg("Неверный логин/пароль");
                             }
                         }
@@ -66,9 +68,9 @@ public class ClientHandler {
                                 continue;
                             }
                             if (server.getAuthService()
-                                    .registration(token[1], token[2], token[3])){
+                                    .registration(token[1], token[2], token[3])) {
                                 sendMsg("/reg_ok");
-                            }else {
+                            } else {
                                 sendMsg("/reg_no");
                             }
                         }
@@ -77,12 +79,12 @@ public class ClientHandler {
                     while (authenticated) {
                         String str = in.readUTF();
 
-                        if (str.startsWith("/")){
+                        if (str.startsWith("/")) {
                             if (str.equals("/end")) {
                                 sendMsg("/end");
                                 break;
                             }
-                            if (str.startsWith("/w")){
+                            if (str.startsWith("/w")) {
                                 String[] token = str.split(" ", 3);
                                 if (token.length < 3) {
                                     continue;
@@ -90,13 +92,15 @@ public class ClientHandler {
                                 server.privateMsg(this, token[1], token[2]);
                             }
 
-                        }else {
+                        } else {
                             server.broadcastMsg(this, str);
                         }
                     }
+                } catch (SocketTimeoutException e) {
+                    sendMsg("/end");
                 } catch (IOException e) {
                     e.printStackTrace();
-                }finally {
+                } finally {
                     System.out.println("Client disconnect!");
                     server.unsubscribe(this);
                     try {
@@ -112,7 +116,7 @@ public class ClientHandler {
         }
     }
 
-    public void sendMsg(String msg){
+    public void sendMsg(String msg) {
         try {
             out.writeUTF(msg);
         } catch (IOException e) {
