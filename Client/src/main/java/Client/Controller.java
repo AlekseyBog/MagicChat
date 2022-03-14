@@ -16,6 +16,7 @@ import javafx.scene.layout.HBox;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
+import service.ServiceMessages;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -66,7 +67,6 @@ public class Controller implements Initializable {
         if (!authenticated) {
             nickname = "";
         }
-
         setTitle(nickname);
         textArea.clear();
     }
@@ -78,7 +78,7 @@ public class Controller implements Initializable {
             stage.setOnCloseRequest(event -> {
                 if (socket != null && !socket.isClosed()) {
                     try {
-                        out.writeUTF("/end");
+                        out.writeUTF(ServiceMessages.END);
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
@@ -102,15 +102,15 @@ public class Controller implements Initializable {
                         String str = in.readUTF();
 
                         if (str.startsWith("/")) {
-                            if (str.equals("/end")) {
+                            if (str.equals(ServiceMessages.END)) {
                                 break;
                             }
-                            if (str.startsWith("/authok")) {
+                            if (str.startsWith(ServiceMessages.AUTH_OK)) {
                                 nickname = str.split(" ")[1];
                                 setAuthenticated(true);
                                 break;
                             }
-                            if (str.startsWith("/reg")) {
+                            if (str.startsWith(ServiceMessages.REG)) {
                                 regController.regStatus(str);
                             }
                         } else {
@@ -122,7 +122,7 @@ public class Controller implements Initializable {
                         String str = in.readUTF();
 
                         if (str.startsWith("/")) {
-                            if (str.equals("/end")) {
+                            if (str.equals(ServiceMessages.END)) {
                                 setAuthenticated(false);
                                 break;
                             }
@@ -183,7 +183,7 @@ public class Controller implements Initializable {
             connect();
         }
         try {
-            String msg = String.format("/auth %s %s",
+            String msg = String.format("%s %s %s", ServiceMessages.AUTH,
                     loginField.getText().trim(), passwordField.getText().trim());
             out.writeUTF(msg);
             passwordField.clear();
