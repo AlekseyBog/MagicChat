@@ -21,7 +21,11 @@ public class Server {
     public Server() {
 
         clients = new CopyOnWriteArrayList<>();
-        authService = new SimpleAuthService();
+//        authService = new SimpleAuthService();
+        if (!DBHandler.connect()) {
+            throw new RuntimeException("No connected");
+        }
+        authService = new DBAServise();
 
         try {
             server = new ServerSocket(PORT);
@@ -36,6 +40,7 @@ public class Server {
             e.printStackTrace();
         }finally {
             System.out.println("Server stop");
+            DBHandler.disconnect();
             try {
                 server.close();
             } catch (IOException e) {
@@ -96,7 +101,6 @@ public class Server {
             c.sendMsg(message);
         }
     }
-
 
     public AuthService getAuthService() {
         return authService;
