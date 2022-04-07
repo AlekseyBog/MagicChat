@@ -8,4 +8,5 @@ public class ServiceMessages {
     public static final String AUTH_OK = "/authok";
     public static final String REG = "/reg";
     public static final String CH_NICK = "/chnick";
+    public static final String FAIL_NAME = "history/history_";
 }
