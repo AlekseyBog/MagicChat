@@ -9,6 +9,8 @@ import java.net.Socket;
 import java.util.List;
 import java.util.Scanner;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class Server {
     private ServerSocket server;
@@ -17,9 +19,14 @@ public class Server {
 
     private List<ClientHandler> clients;
     private AuthService authService;
+    private ExecutorService executorService;
+
+    public ExecutorService getExecutorService() {
+        return executorService;
+    }
 
     public Server() {
-
+        executorService = Executors.newCachedThreadPool();
         clients = new CopyOnWriteArrayList<>();
 //        authService = new SimpleAuthService();
         if (!DBHandler.connect()) {
@@ -41,6 +48,7 @@ public class Server {
         }finally {
             System.out.println("Server stop");
             DBHandler.disconnect();
+            executorService.shutdown();
             try {
                 server.close();
             } catch (IOException e) {
