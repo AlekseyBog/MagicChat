@@ -48,6 +48,10 @@ public class History {
                 for (int i = startPosition; i < historyList.size(); i++) {
                     sb.append(historyList.get(i)).append(System.lineSeparator());
                 }
+            }else {
+                for (int i = startPosition; i < historyList.size() ; i++) {
+                    sb.append(historyList.get(i)).append(System.lineSeparator());
+                }
             }
         } catch (IOException e) {
             e.printStackTrace();
